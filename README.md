@@ -2,6 +2,14 @@
 
 Gambit es una aplicación web que proporciona pronósticos de partidos de fútbol utilizando datos de la API de Football-Data.org.
 
+## Capturas de Pantalla
+
+### Página Principal
+![Página Principal](https://github.com/user-attachments/assets/e34cc883-49f7-4ca2-bfa0-1c349579293d)
+
+### Página de Búsqueda
+![Búsqueda de Partidos](https://github.com/user-attachments/assets/0feeb59b-56bf-44c6-8891-0638d3f39072)
+
 ## Características
 
 - 📊 Pronósticos de resultados de partidos
