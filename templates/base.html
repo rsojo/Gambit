@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gambit - Pronósticos de Fútbol{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <a href="/">⚽ Gambit</a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/">Inicio</a></li>
+                <li><a href="/search">Buscar</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropbtn">Ligas ▼</a>
+                    <div class="dropdown-content">
+                        <a href="/leagues/CL">Champions League</a>
+                        <a href="/leagues/PL">Premier League</a>
+                        <a href="/leagues/PD">La Liga</a>
+                        <a href="/leagues/BL1">Bundesliga</a>
+                        <a href="/leagues/EC">Euro Championship</a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Gambit - Pronósticos de Fútbol</p>
+            <p>Datos proporcionados por <a href="https://www.football-data.org" target="_blank">Football-Data.org</a></p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
