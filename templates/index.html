@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Gambit - Pronósticos de Hoy{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>⚽ Pronósticos de Fútbol</h1>
+    <p class="subtitle">Predicciones de partidos para hoy - {{ date }}</p>
+</div>
+
+{% if predictions %}
+<div class="predictions-grid">
+    {% for prediction in predictions %}
+    <div class="prediction-card">
+        <div class="match-header">
+            <span class="competition-badge">{{ prediction.competition }}</span>
+            <span class="match-date">{{ prediction.date[:10] }} {{ prediction.date[11:16] }} UTC</span>
+        </div>
+        
+        <div class="match-teams">
+            <div class="team home-team">
+                <span class="team-name">{{ prediction.home_team }}</span>
+            </div>
+            <div class="vs-section">
+                <span class="vs-text">VS</span>
+                <div class="predicted-score">{{ prediction.predicted_score }}</div>
+            </div>
+            <div class="team away-team">
+                <span class="team-name">{{ prediction.away_team }}</span>
+            </div>
+        </div>
+        
+        <div class="prediction-result">
+            <strong>Pronóstico:</strong> {{ prediction.predicted_result }}
+            <span class="confidence">{{ prediction.confidence }} confianza</span>
+        </div>
+        
+        <div class="prediction-details">
+            <h4>📊 Predicciones Detalladas:</h4>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Total de Goles:</span>
+                    <span class="stat-value">{{ prediction.goals_prediction.total_goals }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Más de 2.5 Goles:</span>
+                    <span class="stat-value">{{ '✓ Sí' if prediction.goals_prediction.over_2_5 else '✗ No' }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Ambos Anotan:</span>
+                    <span class="stat-value">{{ '✓ Sí' if prediction.goals_prediction.both_teams_score else '✗ No' }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Corners:</span>
+                    <span class="stat-value">~{{ prediction.stats_prediction.corners }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Faltas:</span>
+                    <span class="stat-value">~{{ prediction.stats_prediction.fouls }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Tarjetas Amarillas:</span>
+                    <span class="stat-value">~{{ prediction.stats_prediction.yellow_cards }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Posesión Local:</span>
+                    <span class="stat-value">{{ prediction.stats_prediction.possession_home }}%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="no-matches">
+    <h2>📅 No hay partidos programados para hoy</h2>
+    <p>Intenta buscar partidos en otras fechas o ligas específicas.</p>
+    <a href="/search" class="btn btn-primary">Buscar Partidos</a>
+</div>
+{% endif %}
+{% endblock %}

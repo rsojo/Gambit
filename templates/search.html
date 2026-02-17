@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Buscar Partidos - Gambit{% endblock %}
+
+{% block content %}
+<div class="search-container">
+    <h1>🔍 Buscar Pronósticos de Partidos</h1>
+    
+    <div class="search-form">
+        <div class="form-group">
+            <label for="league-select">Liga:</label>
+            <select id="league-select" class="form-control">
+                <option value="">Todas las Ligas</option>
+                <option value="CL">Champions League</option>
+                <option value="PL">Premier League</option>
+                <option value="PD">La Liga</option>
+                <option value="BL1">Bundesliga</option>
+                <option value="EC">Euro Championship</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="date-from">Fecha Desde:</label>
+            <input type="date" id="date-from" class="form-control" value="">
+        </div>
+        
+        <div class="form-group">
+            <label for="date-to">Fecha Hasta:</label>
+            <input type="date" id="date-to" class="form-control" value="">
+        </div>
+        
+        <button id="search-btn" class="btn btn-primary">Buscar</button>
+    </div>
+    
+    <div id="loading" class="loading" style="display: none;">
+        <p>⚽ Cargando pronósticos...</p>
+    </div>
+    
+    <div id="results" class="predictions-grid">
+        <!-- Results will be loaded here via JavaScript -->
+    </div>
+    
+    <div id="no-results" class="no-matches" style="display: none;">
+        <h2>No se encontraron partidos</h2>
+        <p>Intenta con diferentes criterios de búsqueda.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates
+    const today = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(today.getDate() + 7);
+    
+    document.getElementById('date-from').value = today.toISOString().split('T')[0];
+    document.getElementById('date-to').value = nextWeek.toISOString().split('T')[0];
+    
+    // Search button click handler
+    document.getElementById('search-btn').addEventListener('click', searchMatches);
+    
+    function searchMatches() {
+        const league = document.getElementById('league-select').value;
+        const dateFrom = document.getElementById('date-from').value;
+        const dateTo = document.getElementById('date-to').value;
+        
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const noResults = document.getElementById('no-results');
+        
+        // Show loading
+        loading.style.display = 'block';
+        results.innerHTML = '';
+        noResults.style.display = 'none';
+        
+        // Build query string
+        let url = '/api/predictions?';
+        if (league) url += `league=${league}&`;
+        if (dateFrom) url += `date_from=${dateFrom}&`;
+        if (dateTo) url += `date_to=${dateTo}&`;
+        
+        // Fetch predictions
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                
+                if (data.success && data.predictions.length > 0) {
+                    displayPredictions(data.predictions);
+                } else {
+                    noResults.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                loading.style.display = 'none';
+                noResults.style.display = 'block';
+            });
+    }
+    
+    function displayPredictions(predictions) {
+        const results = document.getElementById('results');
+        results.innerHTML = '';
+        
+        predictions.forEach(prediction => {
+            const card = createPredictionCard(prediction);
+            results.appendChild(card);
+        });
+    }
+    
+    function createPredictionCard(prediction) {
+        const card = document.createElement('div');
+        card.className = 'prediction-card';
+        
+        card.innerHTML = `
+            <div class="match-header">
+                <span class="competition-badge">${prediction.competition}</span>
+                <span class="match-date">${prediction.date.substring(0, 10)} ${prediction.date.substring(11, 16)} UTC</span>
+            </div>
+            
+            <div class="match-teams">
+                <div class="team home-team">
+                    <span class="team-name">${prediction.home_team}</span>
+                </div>
+                <div class="vs-section">
+                    <span class="vs-text">VS</span>
+                    <div class="predicted-score">${prediction.predicted_score}</div>
+                </div>
+                <div class="team away-team">
+                    <span class="team-name">${prediction.away_team}</span>
+                </div>
+            </div>
+            
+            <div class="prediction-result">
+                <strong>Pronóstico:</strong> ${prediction.predicted_result}
+                <span class="confidence">${prediction.confidence} confianza</span>
+            </div>
+            
+            <div class="prediction-details">
+                <h4>📊 Predicciones Detalladas:</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Total de Goles:</span>
+                        <span class="stat-value">${prediction.goals_prediction.total_goals}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Más de 2.5 Goles:</span>
+                        <span class="stat-value">${prediction.goals_prediction.over_2_5 ? '✓ Sí' : '✗ No'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Ambos Anotan:</span>
+                        <span class="stat-value">${prediction.goals_prediction.both_teams_score ? '✓ Sí' : '✗ No'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Corners:</span>
+                        <span class="stat-value">~${prediction.stats_prediction.corners}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Faltas:</span>
+                        <span class="stat-value">~${prediction.stats_prediction.fouls}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Tarjetas Amarillas:</span>
+                        <span class="stat-value">~${prediction.stats_prediction.yellow_cards}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Posesión Local:</span>
+                        <span class="stat-value">${prediction.stats_prediction.possession_home}%</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        return card;
+    }
+});
+</script>
+{% endblock %}
