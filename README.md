@@ -36,7 +36,13 @@ pip install -r requirements.txt
 ```
 
 3. Configura la API key:
-El archivo `.env` ya está configurado con la API key necesaria.
+Copia el archivo `.env.example` a `.env` y actualiza la API key si es necesario:
+```bash
+cp .env.example .env
+# Edita .env con tu API key de football-data.org
+```
+
+Nota: El repositorio ya incluye una API key funcional para propósitos de demostración.
 
 ## Uso
 

@@ -1,4 +1,5 @@
 import os
+import random
 from flask import Flask, render_template, request, jsonify
 from datetime import datetime, timedelta
 import requests
@@ -22,6 +23,15 @@ LEAGUES = {
     'EC': 2018   # European Championship
 }
 
+# League display names
+LEAGUE_NAMES = {
+    'CL': 'UEFA Champions League',
+    'PL': 'Premier League',
+    'PD': 'La Liga',
+    'BL1': 'Bundesliga',
+    'EC': 'European Championship'
+}
+
 def get_headers():
     """Get headers for Football Data API requests"""
     return {
@@ -32,8 +42,6 @@ def get_demo_matches(league_code=None):
     """
     Generate demo matches for demonstration purposes
     """
-    from datetime import datetime, timedelta
-    
     teams_by_league = {
         'CL': [
             ('Real Madrid', 'Bayern Munich'),
@@ -67,14 +75,6 @@ def get_demo_matches(league_code=None):
         ]
     }
     
-    league_names = {
-        'CL': 'UEFA Champions League',
-        'PL': 'Premier League',
-        'PD': 'La Liga',
-        'BL1': 'Bundesliga',
-        'EC': 'European Championship'
-    }
-    
     matches = []
     leagues_to_show = [league_code] if league_code and league_code in teams_by_league else list(teams_by_league.keys())
     
@@ -87,7 +87,7 @@ def get_demo_matches(league_code=None):
                 'status': 'SCHEDULED',
                 'homeTeam': {'name': home, 'id': 100 + len(matches)},
                 'awayTeam': {'name': away, 'id': 200 + len(matches)},
-                'competition': {'name': league_names[league], 'code': league},
+                'competition': {'name': LEAGUE_NAMES.get(league, league), 'code': league},
                 'score': {'fullTime': {'home': None, 'away': None}}
             })
     
@@ -126,13 +126,25 @@ def get_matches(league_code=None, date_from=None, date_to=None):
             if matches:
                 return matches
             else:
-                print("No matches from API, using demo data")
+                print("INFO: No matches found from API for the specified criteria, using demo data")
                 return get_demo_matches(league_code)
-        else:
-            print(f"API Error: {response.status_code} - {response.text}")
+        elif response.status_code == 401:
+            print("ERROR: API authentication failed - Invalid API key")
             return get_demo_matches(league_code)
+        elif response.status_code == 429:
+            print("WARNING: API rate limit exceeded - Too many requests")
+            return get_demo_matches(league_code)
+        else:
+            print(f"ERROR: API returned status {response.status_code}: {response.text}")
+            return get_demo_matches(league_code)
+    except requests.exceptions.Timeout:
+        print("WARNING: API request timeout - Using demo data")
+        return get_demo_matches(league_code)
+    except requests.exceptions.ConnectionError:
+        print("WARNING: Unable to connect to API - Network issue or API unavailable, using demo data")
+        return get_demo_matches(league_code)
     except Exception as e:
-        print(f"Error fetching matches: {e}, using demo data")
+        print(f"ERROR: Unexpected error fetching matches: {type(e).__name__}: {e}")
         return get_demo_matches(league_code)
 
 def generate_prediction(match):
@@ -148,31 +160,34 @@ def generate_prediction(match):
     Returns:
         Dictionary with predictions
     """
-    import random
-    
     home_team = match.get('homeTeam', {}).get('name', 'Home Team')
     away_team = match.get('awayTeam', {}).get('name', 'Away Team')
     
     # Simple prediction logic (would be replaced with ML model)
     # For demonstration purposes, generating random but realistic predictions
     
-    # Score prediction (most common scores in football)
+    # Score prediction - these are the most common final scores in football matches
+    # Format: (home_score, away_score) based on historical football statistics
+    # Includes low-scoring games typical in professional football
     possible_scores = [
         (1, 0), (2, 0), (2, 1), (1, 1), (0, 0),
         (3, 0), (3, 1), (0, 1), (1, 2), (0, 2)
     ]
     home_score, away_score = random.choice(possible_scores)
     
-    # Result prediction
+    # Result prediction with realistic probabilities
+    # Home advantage typically gives ~45% win probability
+    # Away teams win ~30% of matches
+    # Draws occur in ~25% of matches
     if home_score > away_score:
         result = f'{home_team} wins'
-        probability = 0.45
+        probability = 0.45  # Home win probability
     elif home_score < away_score:
         result = f'{away_team} wins'
-        probability = 0.30
+        probability = 0.30  # Away win probability
     else:
         result = 'Draw'
-        probability = 0.25
+        probability = 0.25  # Draw probability
     
     prediction = {
         'match_id': match.get('id'),
@@ -277,11 +292,13 @@ def league_predictions(league_code):
     return render_template('league.html',
                          predictions=predictions,
                          league_code=league_code,
-                         league_name=next(
-                             (k for k, v in LEAGUES.items() if v == LEAGUES[league_code]),
-                             league_code
-                         ),
+                         league_name=LEAGUE_NAMES.get(league_code, league_code),
                          leagues=LEAGUES)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # WARNING: Debug mode should be disabled in production
+    # Use a production WSGI server (gunicorn, uwsgi) for deployment
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    # Bind to 127.0.0.1 for local development, 0.0.0.0 only for containers
+    host = os.environ.get('FLASK_HOST', '127.0.0.1')
+    app.run(debug=debug_mode, host=host, port=5000)

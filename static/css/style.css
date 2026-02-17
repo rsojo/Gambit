@@ -122,7 +122,7 @@ main {
 /* Predictions Grid */
 .predictions-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 2rem;
     margin-bottom: 2rem;
 }
@@ -409,5 +409,25 @@ main {
     
     .search-form {
         grid-template-columns: 1fr;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+    .hero h1 {
+        font-size: 1.5rem;
+    }
+    
+    .prediction-card {
+        padding: 1rem;
+    }
+    
+    .team-name {
+        font-size: 0.95rem;
+    }
+    
+    .predicted-score {
+        font-size: 1.1rem;
+        padding: 0.4rem 0.8rem;
     }
 }
