@@ -35,10 +35,18 @@
     <div id="loading" class="loading" style="display: none;">
         <p>⚽ Cargando pronósticos...</p>
     </div>
+
+    <div id="results-summary" class="results-summary" style="display: none;"></div>
     
     <div id="results" class="predictions-grid">
         <!-- Results will be loaded here via JavaScript -->
     </div>
+
+    <div id="infinite-loader" class="infinite-loader" style="display: none;">
+        Desliza para cargar más resultados...
+    </div>
+
+    <div id="scroll-sentinel" class="scroll-sentinel" aria-hidden="true"></div>
     
     <div id="no-results" class="no-matches" style="display: none;">
         <h2>No se encontraron partidos</h2>
@@ -50,6 +58,19 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const PAGE_SIZE = 12;
+    const loading = document.getElementById('loading');
+    const results = document.getElementById('results');
+    const noResults = document.getElementById('no-results');
+    const resultsSummary = document.getElementById('results-summary');
+    const infiniteLoader = document.getElementById('infinite-loader');
+    const scrollSentinel = document.getElementById('scroll-sentinel');
+
+    let allPredictions = [];
+    let renderedCount = 0;
+    let observer = null;
+    let loadingBatch = false;
+
     // Set default dates
     const today = new Date();
     const nextWeek = new Date();
@@ -60,20 +81,29 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Search button click handler
     document.getElementById('search-btn').addEventListener('click', searchMatches);
+
+    // Trigger one automatic search on first load
+    searchMatches();
     
     function searchMatches() {
         const league = document.getElementById('league-select').value;
         const dateFrom = document.getElementById('date-from').value;
         const dateTo = document.getElementById('date-to').value;
         
-        const loading = document.getElementById('loading');
-        const results = document.getElementById('results');
-        const noResults = document.getElementById('no-results');
-        
-        // Show loading
+        if (observer) {
+            observer.disconnect();
+        }
+
+        // Show loading for the first API fetch
         loading.style.display = 'block';
         results.innerHTML = '';
         noResults.style.display = 'none';
+        resultsSummary.style.display = 'none';
+        infiniteLoader.style.display = 'none';
+        scrollSentinel.style.display = 'none';
+
+        allPredictions = [];
+        renderedCount = 0;
         
         // Build query string
         let url = '/api/predictions?';
@@ -88,7 +118,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 loading.style.display = 'none';
                 
                 if (data.success && data.predictions.length > 0) {
-                    displayPredictions(data.predictions);
+                    allPredictions = [...data.predictions].sort((a, b) => {
+                        return new Date(a.date).getTime() - new Date(b.date).getTime();
+                    });
+                    resultsSummary.style.display = 'block';
+                    renderNextBatch();
+                    initInfiniteScroll();
                 } else {
                     noResults.style.display = 'block';
                 }
@@ -99,15 +134,73 @@ document.addEventListener('DOMContentLoaded', function() {
                 noResults.style.display = 'block';
             });
     }
-    
-    function displayPredictions(predictions) {
-        const results = document.getElementById('results');
-        results.innerHTML = '';
-        
-        predictions.forEach(prediction => {
+
+    function initInfiniteScroll() {
+        scrollSentinel.style.display = 'block';
+        observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    renderNextBatch();
+                }
+            });
+        }, {
+            root: null,
+            rootMargin: '220px 0px',
+            threshold: 0
+        });
+        observer.observe(scrollSentinel);
+    }
+
+    function renderNextBatch() {
+        if (loadingBatch || renderedCount >= allPredictions.length) {
+            updateProgress();
+            return;
+        }
+
+        loadingBatch = true;
+        infiniteLoader.style.display = 'block';
+
+        const nextSlice = allPredictions.slice(renderedCount, renderedCount + PAGE_SIZE);
+        nextSlice.forEach(prediction => {
             const card = createPredictionCard(prediction);
             results.appendChild(card);
         });
+
+        renderedCount += nextSlice.length;
+        loadingBatch = false;
+        updateProgress();
+    }
+
+    function updateProgress() {
+        if (allPredictions.length === 0) {
+            resultsSummary.style.display = 'none';
+            infiniteLoader.style.display = 'none';
+            scrollSentinel.style.display = 'none';
+            return;
+        }
+
+        resultsSummary.textContent = `Mostrando ${renderedCount} de ${allPredictions.length} partidos`;
+
+        if (renderedCount >= allPredictions.length) {
+            infiniteLoader.textContent = 'Ya viste todos los resultados';
+            scrollSentinel.style.display = 'none';
+            if (observer) {
+                observer.disconnect();
+            }
+        } else {
+            infiniteLoader.textContent = 'Desliza para cargar más resultados...';
+            infiniteLoader.style.display = 'block';
+            scrollSentinel.style.display = 'block';
+        }
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
     
     function createPredictionCard(prediction) {
@@ -116,26 +209,26 @@ document.addEventListener('DOMContentLoaded', function() {
         
         card.innerHTML = `
             <div class="match-header">
-                <span class="competition-badge">${prediction.competition}</span>
-                <span class="match-date">${prediction.date.substring(0, 10)} ${prediction.date.substring(11, 16)} UTC</span>
+                <span class="competition-badge">${escapeHtml(prediction.competition)}</span>
+                <span class="match-date">${escapeHtml(prediction.date.substring(0, 10))} ${escapeHtml(prediction.date.substring(11, 16))} UTC</span>
             </div>
             
             <div class="match-teams">
                 <div class="team home-team">
-                    <span class="team-name">${prediction.home_team}</span>
+                    <span class="team-name">${escapeHtml(prediction.home_team)}</span>
                 </div>
                 <div class="vs-section">
                     <span class="vs-text">VS</span>
-                    <div class="predicted-score">${prediction.predicted_score}</div>
+                    <div class="predicted-score">${escapeHtml(prediction.predicted_score)}</div>
                 </div>
                 <div class="team away-team">
-                    <span class="team-name">${prediction.away_team}</span>
+                    <span class="team-name">${escapeHtml(prediction.away_team)}</span>
                 </div>
             </div>
             
             <div class="prediction-result">
-                <strong>Pronóstico:</strong> ${prediction.predicted_result}
-                <span class="confidence">${prediction.confidence} confianza</span>
+                <strong>Pronóstico:</strong> ${escapeHtml(prediction.predicted_result)}
+                <span class="confidence">${escapeHtml(prediction.confidence)} confianza</span>
             </div>
             
             <div class="prediction-details">
@@ -143,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="stats-grid">
                     <div class="stat-item">
                         <span class="stat-label">Total de Goles:</span>
-                        <span class="stat-value">${prediction.goals_prediction.total_goals}</span>
+                        <span class="stat-value">${escapeHtml(prediction.goals_prediction.total_goals)}</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Más de 2.5 Goles:</span>
@@ -155,19 +248,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Corners:</span>
-                        <span class="stat-value">~${prediction.stats_prediction.corners}</span>
+                        <span class="stat-value">~${escapeHtml(prediction.stats_prediction.corners)}</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Faltas:</span>
-                        <span class="stat-value">~${prediction.stats_prediction.fouls}</span>
+                        <span class="stat-value">~${escapeHtml(prediction.stats_prediction.fouls)}</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Tarjetas Amarillas:</span>
-                        <span class="stat-value">~${prediction.stats_prediction.yellow_cards}</span>
+                        <span class="stat-value">~${escapeHtml(prediction.stats_prediction.yellow_cards)}</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Posesión Local:</span>
-                        <span class="stat-value">${prediction.stats_prediction.possession_home}%</span>
+                        <span class="stat-value">${escapeHtml(prediction.stats_prediction.possession_home)}%</span>
                     </div>
                 </div>
             </div>
