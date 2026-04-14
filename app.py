@@ -32,7 +32,8 @@ LEAGUES = {
     'BL1': 2002,  # Bundesliga
     'EC': 2018,  # European Championship
     'SA': 'SA',  # Serie A
-    'EL': 'EL'   # UEFA Europa League
+    'EL': 'EL',  # UEFA Europa League
+    'CLI': 'CLI'  # CONMEBOL Copa Libertadores
 }
 
 # League display names
@@ -43,7 +44,8 @@ LEAGUE_NAMES = {
     'BL1': 'Bundesliga',
     'EC': 'European Championship',
     'SA': 'Serie A',
-    'EL': 'UEFA Europa League'
+    'EL': 'UEFA Europa League',
+    'CLI': 'CONMEBOL Copa Libertadores'
 }
 
 # Soccerdata league mapping
@@ -55,7 +57,8 @@ SOCCERDATA_LEAGUES = {
     'BL1': 'GER-Bundesliga',
     'EC': 'INT-European Championship',
     'SA': 'ITA-Serie A',
-    'EL': None
+    'EL': None,
+    'CLI': None
 }
 
 # Cache for historical data
@@ -288,7 +291,7 @@ def get_matches(league_code=None, date_from=None, date_to=None):
     Fetch matches from local SQLite cache and sync daily with Football Data API.
     
     Args:
-        league_code: League code (CL, PL, PD, BL1, EC, SA, EL)
+        league_code: League code (CL, PL, PD, BL1, EC, SA, EL, CLI)
         date_from: Start date (YYYY-MM-DD)
         date_to: End date (YYYY-MM-DD)
     
