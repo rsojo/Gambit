@@ -21,6 +21,8 @@ Gambit es una aplicación web que proporciona pronósticos de partidos de fútbo
   - La Liga (PD)
   - Bundesliga (BL1)
   - Euro Championship (EC)
+  - Serie A (SA)
+  - UEFA Europa League (EL)
 
 ## Instalación
 

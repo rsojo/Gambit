@@ -64,7 +64,7 @@ def test_league_support():
     print("TEST 2: League Support")
     print("="*80)
     
-    required_leagues = ['CL', 'BL1', 'PD', 'PL', 'EC']
+    required_leagues = ['CL', 'BL1', 'PD', 'PL', 'EC', 'SA', 'EL']
     
     for league in required_leagues:
         assert league in app.LEAGUES, f"Missing league: {league}"
@@ -82,7 +82,7 @@ def test_match_fetching():
     print("="*80)
     
     # Test fetching matches for each league
-    for league_code in ['CL', 'PL', 'PD', 'BL1', 'EC']:
+    for league_code in ['CL', 'PL', 'PD', 'BL1', 'EC', 'SA', 'EL']:
         matches = app.get_matches(league_code=league_code)
         print(f"✓ {league_code}: Found {len(matches)} matches")
         assert len(matches) > 0, f"No matches found for {league_code}"
@@ -171,7 +171,7 @@ def test_routes_exist():
     print(f"✓ Search page (/search) - Status: {response.status_code}")
     
     # Test league pages
-    for league in ['CL', 'PL', 'PD', 'BL1', 'EC']:
+    for league in ['CL', 'PL', 'PD', 'BL1', 'EC', 'SA', 'EL']:
         response = client.get(f'/leagues/{league}')
         assert response.status_code == 200, f"League page {league} not accessible"
         print(f"✓ League page (/leagues/{league}) - Status: {response.status_code}")
@@ -239,6 +239,12 @@ def test_search_functionality():
     data = response.get_json()
     assert data['success'], "API search failed"
     print(f"✓ Search by league: Found {data['count']} predictions")
+
+    response = client.get(f'/api/predictions?league=SA&date_from={today}&date_to={tomorrow}')
+    assert response.status_code == 200, "Search API for Serie A not working"
+    data = response.get_json()
+    assert data['success'], "API Serie A search failed"
+    print(f"✓ Search by Serie A: Found {data['count']} predictions")
     
     # Search by date range
     response = client.get(f'/api/predictions?date_from={today}&date_to={tomorrow}')

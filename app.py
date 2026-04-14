@@ -30,7 +30,9 @@ LEAGUES = {
     'PL': 2021,  # Premier League
     'PD': 2014,  # La Liga (Primera Division)
     'BL1': 2002,  # Bundesliga
-    'EC': 2018   # European Championship
+    'EC': 2018,  # European Championship
+    'SA': 'SA',  # Serie A
+    'EL': 'EL'   # UEFA Europa League
 }
 
 # League display names
@@ -39,7 +41,9 @@ LEAGUE_NAMES = {
     'PL': 'Premier League',
     'PD': 'La Liga',
     'BL1': 'Bundesliga',
-    'EC': 'European Championship'
+    'EC': 'European Championship',
+    'SA': 'Serie A',
+    'EL': 'UEFA Europa League'
 }
 
 # Soccerdata league mapping
@@ -49,7 +53,9 @@ SOCCERDATA_LEAGUES = {
     'PL': 'ENG-Premier League',
     'PD': 'ESP-La Liga',
     'BL1': 'GER-Bundesliga',
-    'EC': 'INT-European Championship'
+    'EC': 'INT-European Championship',
+    'SA': 'ITA-Serie A',
+    'EL': None
 }
 
 # Cache for historical data
@@ -282,7 +288,7 @@ def get_matches(league_code=None, date_from=None, date_to=None):
     Fetch matches from local SQLite cache and sync daily with Football Data API.
     
     Args:
-        league_code: League code (CL, PL, PD, BL1, EC)
+        league_code: League code (CL, PL, PD, BL1, EC, SA, EL)
         date_from: Start date (YYYY-MM-DD)
         date_to: End date (YYYY-MM-DD)
     
