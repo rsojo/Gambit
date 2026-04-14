@@ -32,10 +32,6 @@
                 <strong>Pronóstico:</strong> {{ prediction.predicted_result }}
                 <span class="confidence">{{ prediction.confidence }} confianza</span>
             </div>
-
-            <div class="data-source-badge data-source-{{ prediction.data_source }}">
-                Fuente de datos: {{ 'soccerdata (real)' if prediction.data_source == 'soccerdata' else prediction.data_source }}
-            </div>
             
             <div class="prediction-details">
                 <h4>📊 Predicciones Detalladas:</h4>
